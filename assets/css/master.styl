@@ -2,6 +2,79 @@
 
 normalize()
 base()
-
+$greyblue = #34444f
+red = #CE6861
+green = #60AB89
 body
-  padding: 50px
+  color $greyblue
+
+a
+  color $greyblue
+  min-height: 50px;
+  text-decoration: none;
+
+button, .btn
+  border: none
+  background-color: transparent
+  // min-width: 50px;
+  // min-height: 50px;
+  outline: none
+  color $greyblue
+
+.button-container
+  position absolute
+  top 0
+  right 0
+  button
+    font-size 40px
+    font-weight 200
+    position relative
+    top -4px
+    width 50px
+    padding 0
+    &.plus, &.minus
+      opacity 0.5
+      &:active
+        opacity 1
+    &.plus
+      color green
+    &.minus
+      color red
+
+
+.delete
+  border: 1px solid red
+  color red
+
+.nav-bar
+  background $greyblue
+  padding 0 5%
+  color white
+  .logout
+    color white
+  h4
+    display: inline-block
+ul
+  margin 0
+  padding 0
+  li
+    position: relative
+    font-size: 15px
+    list-style-type: none
+    margin: 10px 0px
+    height: 50px
+    border-bottom 1px solid lightgrey
+    line-height: 50px
+    padding: 0 5%
+    .value
+      margin-right 10px
+      font-size 25px
+      width 40px
+      text-align center
+      display inline-block
+
+    .title
+      width: calc(unquote('100% - 111px'))
+      text-overflow ellipsis
+      overflow hidden
+      white-space nowrap
