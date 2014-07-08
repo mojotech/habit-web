@@ -1,5 +1,5 @@
 !!!
-html
+html(ng-app='habitsApp')
   head
     meta(charset='utf8')
     meta(http-equiv='X-UA-Compatible', content='IE=edge, chrome=1')
@@ -13,11 +13,10 @@ html
   body
     != content
 
-    //- add other scripts through require.js, not here
     script(src="js/vendor/jquery-1.10.2.js")
-    script(src="js/vendor/handlebars-1.1.2.js")
-    script(src="js/vendor/ember-1.5.1.js")
-    script(src="js/vendor/ember-data.js")
-    script(src='js/vendor/ember-simple-auth-0.5.2.js')
-    script(src='js/vendor/ember-simple-auth-devise-0.5.2.js')
+    script(src="js/vendor/lodash.js")
+    script(src="js/vendor/angular.js")
+    script(src="js/vendor/angular-route.js")
+    script(src="js/vendor/angular-resource.js")
+    script(src="js/vendor/devise.js")
     script(src='js/main.js')

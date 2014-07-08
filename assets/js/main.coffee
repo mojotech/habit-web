@@ -1,99 +1,169 @@
-# Setup
-API_SERVER = "#{location.protocol}//#{location.hostname}:3000"
+### Main App ###
 
-@App = Ember.Application.create()
-App.ApplicationSerializer = DS.ActiveModelSerializer
+habitsApp = angular.module("habitsApp", 
+  ["ngRoute", "Devise"]
+).config (AuthProvider) ->
+  AuthProvider.loginPath "http://localhost:3000/users/sign_in"
+  AuthProvider.registerPath "http://localhost:3000/users"
+  AuthProvider.logoutPath "http://localhost:3000/users/sign_out"
 
-Ember.SimpleAuth.Authenticators.Devise.reopen
-  serverTokenEndpoint: "#{API_SERVER}/users/sign_in"
 
-Ember.Application.initializer
-  name: 'authentication',
-  initialize: (container, application) ->
-    Ember.SimpleAuth.setup container, application,
-      authorizerFactory: 'ember-simple-auth-authorizer:devise'
-      crossOriginWhitelist: [API_SERVER]
+### Routes ###
 
-DS.RESTAdapter.reopen
-  host: API_SERVER
+loginRequired = ($location, $q, Auth) ->
+  deferred = $q.defer()
+  unless Auth.isAuthenticated()
+    deferred.reject()
+    $location.path "login"
+  else
+    deferred.resolve()
+  deferred.promise
 
-# Models
-App.Habit = DS.Model.extend
-  title: DS.attr 'string'
-  checkins: DS.hasMany 'checkin'
-  value: Ember.computed 'checkins', ->
-    @get('checkins')
-      .reduce ((memo, c) ->
-        memo += c.get 'value' ), 0
+habitsApp.config ["$routeProvider", ($routeProvider) ->
+  $routeProvider.when("/habits",
+    templateUrl: "habits"
+    controller: "HabitsController"
+    resolve: { loginRequired: loginRequired }
+  ).when("/habits/new",
+    templateUrl: "habits/new"
+    controller: "HabitsController"
+    resolve: { loginRequired: loginRequired }
+  ).when("/habit/:id",
+    templateUrl: "habit"
+    controller: "HabitsController"
+    resolve: { loginRequired: loginRequired }
+  ).when("/login",
+    templateUrl: "login"
+    controller: "loginController"
+  ).when("/signup",
+    templateUrl: "signup"
+    controller: "signupController"
+  ).otherwise({ redirectTo: '/habits' });
+]
 
-App.Checkin = DS.Model.extend
-  habit: DS.belongsTo 'habit'
-  value: DS.attr 'number'
 
-App.User = DS.Model.extend
-  habits: DS.hasMany 'habits'
-  email: DS.attr 'string'
-  password: DS.attr 'string'
+### Services ###
 
-# Routes
+habitsApp.service "AuthService", (Auth) ->
+  @userAuthenticated = ->
+    Auth.isAuthenticated()
 
-App.ApplicationRoute = Ember.Route.extend Ember.SimpleAuth.ApplicationRouteMixin
+  @signoutUser = ->
+    Auth.logout().then (oldUser) ->
+      window.location = "#/login"
+    return
+      
+  @authenticateUser = (credentials) ->
+    Auth.login(credentials).then (user) ->
+      window.location = "#/habits"
+      return
+    return
 
-App.Router.map ->
-  @route 'login'
-  @route 'signup'
-  @resource 'habits', ->
-  @resource 'habits.new', path: '/habits/new'
-  @resource 'habit', path: '/habits/:habit_id'
+  @registerUser = (credentials) =>
+    Auth.register(credentials).then (registeredUser) =>
+      window.location = "#/habits"
+      @authenticateUser({ email: credentials.email, password: credentials.password })
 
-App.LoginController = Ember.Controller.extend Ember.SimpleAuth.LoginControllerMixin,
-  authenticatorFactory: 'ember-simple-auth-authenticator:devise'
+  @authHeader = ->
+    if Auth.isAuthenticated()
+      user = Auth._currentUser
+      "Token token=\"" + user.user_token + "\", user_email=\"" + user.user_email + "\""
+    else
+      ""
+      
+  return  
 
-App.SignupRoute = Ember.Route.extend
-  model: -> {}
-  actions:
-    signUp: ->
-      user = @store.createRecord 'user',
-        email: @currentModel.identification
-        password: @currentModel.password
-      user.save().then (success) =>
-        @get('session')
-          .authenticate "ember-simple-auth-authenticator:devise",
-            identification: @currentModel.identification
-            password: @currentModel.password
 
-checkin = (value) ->
-  (habit) ->
-    checkin = @store.createRecord 'checkin',
-      value: value
-      habit: habit
-    habit.notifyPropertyChange 'checkins'
-    checkin.save()
+### Controllers ###
 
-App.HabitsRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
-  afterModel: (habits) ->
-    if habits.content.length is 0
-      @transitionTo 'habits.new'
-  model: -> @store.find 'habit'
-  actions:
-    plusOne: checkin(1)
-    minusOne: checkin(-1)
+habitsApp.controller "HabitsController", [
+  "$scope"
+  "$http"
+  "$routeParams"
+  "AuthService"
+  ($scope, $http, $routeParams, AuthService) ->
+    fetchHabits = ->
+      $http(
+        url: 'http://localhost:3000/habits',
+        method: 'GET',
+        headers: { Authorization: AuthService.authHeader() }
+      ).success (data) ->
+        $scope.habits = data.habits
+        $scope.habit = getHabit(parseInt($routeParams.id)) if $routeParams.id
+        $scope.value = (habitId) ->
+          _(data.checkins).filter((checkin) ->
+            _.contains getHabit(habitId).checkin_ids, checkin.id
+          ).map((checkin) ->
+            checkin.value
+          ).reduce((prev, curr, index, array) ->
+            prev + curr
+          ) or 0
 
-App.HabitsNewRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
-  model: -> @store.createRecord 'habit'
-  actions:
-    save: ->
-      @modelFor('habits.new').save().then =>
-        @transitionTo 'habits'
+    fetchHabits()
 
-App.HabitRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
-  model: (params) ->
-    @store.find 'habit', params.habit_id
-  actions:
-    removeHabit: ->
-      @modelFor('habit').destroyRecord().then =>
-        @transitionTo 'habits'
+    getHabit = (habitId) ->
+      _.find $scope.habits, { id: habitId }
 
-App.IndexRoute = Ember.Route.extend
-  redirect: ->
-    @transitionTo 'habits'
+    $scope.checkin = (habitId, value) ->
+      $http(
+        url: "http://localhost:3000/checkins"
+        method: "POST"
+        data: { habit_id: habitId, value: value }
+        headers: { Authorization: AuthService.authHeader() }
+      ).success (data) ->
+        fetchHabits()
+
+    $scope.createHabit = (title) ->
+      $http(
+        url: "http://localhost:3000/habits"
+        method: "POST"
+        data: { title: title }
+        headers: { Authorization: AuthService.authHeader() }
+      ).success (data) ->
+        window.location = "#/habits"
+
+    $scope.deleteHabit = (habitId) ->
+      $http(
+        url: "http://localhost:3000/habits/" + habitId
+        method: "DELETE"
+        headers:
+          Authorization: AuthService.authHeader()
+      ).success (data) ->
+        window.location = "#/habits"
+
+    $scope.userAuthenticated = ->
+      AuthService.userAuthenticated()
+
+    $scope.signoutUser = ->
+      AuthService.signoutUser()
+
+    return
+]
+
+habitsApp.controller "loginController", [
+  "$scope"
+  "AuthService"
+  ($scope, AuthService) ->
+    $scope.loginCredentials = { email: '', password: '' }
+
+    $scope.authenticateUser = ->
+      AuthService.authenticateUser $scope.loginCredentials
+
+    return
+]
+
+habitsApp.controller "signupController", [
+  "$scope"
+  "AuthService"
+  ($scope, AuthService) ->
+    $scope.userInfo = { email: '', password: '' }
+
+    $scope.signupUser = ->
+      credentials =
+        email: $scope.userInfo.email
+        password: $scope.userInfo.password
+        password_confirmation: $scope.userInfo.password
+      AuthService.registerUser credentials
+
+    return
+]
