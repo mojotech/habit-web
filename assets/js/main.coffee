@@ -44,118 +44,154 @@ habitsApp.config ["$routeProvider", ($routeProvider) ->
 
 ### Services ###
 
-habitsApp.service "AuthService", (Auth) ->
-  @userAuthenticated = ->
-    Auth.isAuthenticated()
-
+habitsApp.service "auth", (Auth, $location) ->
   @signoutUser = ->
     Auth.logout().then (oldUser) ->
-      window.location = "#/login"
+      $location.path "login"
     return
       
   @authenticateUser = (credentials) ->
     Auth.login(credentials).then (user) ->
-      window.location = "#/habits"
-      return
+      $location.path "habits"
     return
 
   @registerUser = (credentials) =>
     Auth.register(credentials).then (registeredUser) =>
-      window.location = "#/habits"
-      @authenticateUser({ email: credentials.email, password: credentials.password })
+      @authenticateUser { email: credentials.email, password: credentials.password }
 
   @authHeader = ->
     if Auth.isAuthenticated()
       user = Auth._currentUser
-      "Token token=\"" + user.user_token + "\", user_email=\"" + user.user_email + "\""
+      "Token token=\"#{user.user_token}\", user_email=\"#{user.user_email}\""
     else
       ""
       
   return  
+
+habitsApp.service "api", ($location) ->
+  protocol = $location.protocol()
+  host = $location.host()
+  (path) ->
+    "#{protocol}://#{host}:3000/#{path}"
+
+habitsApp.service "habitsService", ($http, auth, api, $location) ->
+  @create = (title) ->
+    $http(
+      url: api('habits')
+      method: "POST"
+      data: { title: title }
+      headers: { Authorization: auth.authHeader() }
+    ).success (data) ->
+      $location.path "habits"
+
+  @destroy = (id) ->
+    $http(
+      url: api("habits/#{id}")
+      method: "DELETE"
+      headers: { Authorization: auth.authHeader() }
+    ).success (data) ->
+      $location.path "habits"
+
+  @checkin = (id, value, callback) ->
+    $http(
+      url: api("checkins")
+      method: "POST"
+      data: { habit_id: id, value: value }
+      headers: { Authorization: auth.authHeader() }
+    ).success (data) ->
+      callback data.habits
+
+  @getHabits = (callback) =>
+    $http(
+      url: api("habits")
+      method: 'GET'
+      headers: { Authorization: auth.authHeader() }
+    ).success (data) =>
+      _.map(data.habits, (habit) =>
+        @checkins(habit.id, (value) ->
+          habit.checkins = value
+        )
+      )
+      callback data.habits
+
+  @getHabit = (id, callback) ->
+    $http(
+      url: api("habits/#{id}")
+      method: "GET"
+      headers: { Authorization: auth.authHeader() }
+    ).success (data) ->
+      callback data.habit
+
+  @checkins = (id, callback) =>
+    $http(
+      url: api("habits")
+      method: 'GET'
+      headers: { Authorization: auth.authHeader() }
+    ).success (data) =>
+      @getHabit(id, (habit) ->
+        callback(
+          _(data.checkins).filter((checkin) =>
+            _.contains habit.checkin_ids, checkin.id
+          ).map((checkin) ->
+            checkin.value
+          ).reduce((prev, curr, index, array) ->
+            prev + curr
+          ) or 0
+        )
+      )
+  return
 
 
 ### Controllers ###
 
 habitsApp.controller "HabitsController", [
   "$scope"
-  "$http"
   "$routeParams"
-  "AuthService"
-  ($scope, $http, $routeParams, AuthService) ->
-    fetchHabits = ->
-      $http(
-        url: 'http://localhost:3000/habits',
-        method: 'GET',
-        headers: { Authorization: AuthService.authHeader() }
-      ).success (data) ->
-        $scope.habits = data.habits
-        $scope.habit = getHabit(parseInt($routeParams.id)) if $routeParams.id
-        $scope.value = (habitId) ->
-          _(data.checkins).filter((checkin) ->
-            _.contains getHabit(habitId).checkin_ids, checkin.id
-          ).map((checkin) ->
-            checkin.value
-          ).reduce((prev, curr, index, array) ->
-            prev + curr
-          ) or 0
+  "auth"
+  "habitsService"
+  ($scope, $routeParams, auth, habitsService) ->
+    habitsService.getHabits (habits) ->
+      $scope.habits = habits
 
-    fetchHabits()
-
-    getHabit = (habitId) ->
-      _.find $scope.habits, { id: habitId }
+    if $routeParams.id
+      habitsService.getHabit(parseInt($routeParams.id), (habit) ->
+        $scope.habit = habit
+      )
 
     $scope.checkin = (habitId, value) ->
-      $http(
-        url: "http://localhost:3000/checkins"
-        method: "POST"
-        data: { habit_id: habitId, value: value }
-        headers: { Authorization: AuthService.authHeader() }
-      ).success (data) ->
-        fetchHabits()
+      habitsService.checkin(habitId, value, ->
+        habitsService.getHabits (habits) ->
+          $scope.habits = habits
+      )
 
     $scope.createHabit = (title) ->
-      $http(
-        url: "http://localhost:3000/habits"
-        method: "POST"
-        data: { title: title }
-        headers: { Authorization: AuthService.authHeader() }
-      ).success (data) ->
-        window.location = "#/habits"
+      habitsService.create title
 
     $scope.deleteHabit = (habitId) ->
-      $http(
-        url: "http://localhost:3000/habits/" + habitId
-        method: "DELETE"
-        headers:
-          Authorization: AuthService.authHeader()
-      ).success (data) ->
-        window.location = "#/habits"
-
-    $scope.userAuthenticated = ->
-      AuthService.userAuthenticated()
+      habitsService.destroy habitId
 
     $scope.signoutUser = ->
-      AuthService.signoutUser()
+      auth.signoutUser()
 
     return
 ]
 
 habitsApp.controller "loginController", [
   "$scope"
-  "AuthService"
-  ($scope, AuthService) ->
+  "auth"
+  ($scope, auth) ->
     $scope.loginCredentials = { email: '', password: '' }
 
     $scope.authenticateUser = ->
-      AuthService.authenticateUser $scope.loginCredentials
+      auth.authenticateUser $scope.loginCredentials
 
     return
 ]
 
 habitsApp.controller "signupController", [
   "$scope"
-  "AuthService"
-  ($scope, AuthService) ->
+  "auth"
+  ($scope, auth) ->
     $scope.userInfo = { email: '', password: '' }
 
     $scope.signupUser = ->
@@ -163,7 +199,7 @@ habitsApp.controller "signupController", [
         email: $scope.userInfo.email
         password: $scope.userInfo.password
         password_confirmation: $scope.userInfo.password
-      AuthService.registerUser credentials
+      auth.registerUser credentials
 
     return
 ]

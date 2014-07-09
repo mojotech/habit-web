@@ -19,7 +19,7 @@ script(type='text/ng-template' id='habits').
   </div>
   <ul>
     <li ng-repeat="habit in habits">
-      <div class='title'> <a href="#/habit/{{habit.id}}"><span class='value'>{{value(habit.id)}}</span>{{habit.title}}</a></div>
+      <div class='title'> <a href="#/habit/{{habit.id}}"><span class='value'>{{habit.checkins}}</span>{{habit.title}}</a></div>
       <div class='button-container'>
         <button class='plus' ng-click="checkin(habit.id, 1);"> + </button>
         <button class='minus' ng-click="checkin(habit.id, -1);"> - </button>
