@@ -1,59 +1,56 @@
-//- script(type='text/x-handlebars' id='signup').
-//-   <h1>Sign Up</h1>
-//-   <form {{action 'signUp' on='submit'}}>
-//-     <div class="form-group">
-//-       {{input id='identification' placeholder='Enter Login' class='form-control' value=identification}}
-//-     </div>
-//-     <div class="form-group">
-//-       {{input id='password' placeholder='Enter Password' class='form-control' type='password' value=password}}
-//-     </div>
-//-     <button type="submit" class="btn btn-default">Sign Up</button>
-//-   </form>
+<div id="app"></div>
 
-//- script(type='text/x-handlebars' id='habits').
-//-   <div class="nav-bar">
-//-     <h4> Habits </h4>
-//-     <a {{action 'invalidateSession'}} class="logout"> Logout </a>
-//-   </div>
-//-   <ul>
-//-     {{#each}}
-//-     <li>
-//-       <div class='title'> {{#link-to 'habit' this}}<span class='value'>{{value}}</span>{{title}}{{/link-to}} </div>
-//-       <div class='button-container'>
-//-         <button {{action 'plusOne' this}} class='plus'> + </button>
-//-         <button {{action 'minusOne' this}} class='minus'> - </button>
-//-       </div>
-//-     </li>
-//-     {{/each}}
-//-   </ul>
-//-   {{#link-to 'habits.new'}} New Habit {{/link-to}}
+script(type='text/html' id='habit-item').
+  <div class='title'><a href="#/habits/<%= id %>"><span class='value'><%= value %></span><%= title %></a></div>
+  <div class='button-container'>
+    <button class='plus'> + </button>
+    <button class='minus'> - </button>
+  </div>
 
-//- script(type='text/x-handlebars', id="habits/new").
-//-   <div class="nav-bar">
-//-     <h4> New Habit </h4>
-//-     <a {{action 'invalidateSession'}} class="logout"> Logout </a>
-//-   </div>
-//-   {{view Ember.TextField valueBinding="title" cols="30"}}
-//-   <button {{action 'save'}}> Save </button>
+script(type='text/html' id='habits').
+  <div class="nav-bar">
+    <h4>Habits</h4>
+    <a href="#/logout" class="logout">Logout</a>
+  </div>
+  <ul id='habits-list' />
+  <a href="#/habits/new">New Habit</a>
 
-//- script(type='text/x-handlebars' id='habit').
-//-   <div class="nav-bar">
-//-     <h4> {{title}} </h4>
-//-     <a {{action 'invalidateSession'}} class="logout"> Logout </a>
-//-   </div>
+script(type='text/html', id="habits-new").
+  <div class="nav-bar">
+    <h4>New Habit</h4>
+    <a href="#/logout" class="logout">Logout</a>
+  </div>
+  <input id="new-habit" type="text" cols="30" />
+  <button id="save-btn">Save</button>
 
-//-   <button {{action 'removeHabit'}} class='delete'> Delete {{title}} </button>
+script(type='text/html' id='habit').
+  <div class="nav-bar">
+    <h4><%= title %></h4>
+    <a href="#/logout" class="logout">Logout</a>
+  </div>
+  <button id='delete-btn' class='delete'>Delete <%= title %></button>
 
-//- script(type='text/x-handlebars' id='login').
-//-   <h1>Login</h1>
-//-   {{! login form; the fields must be named "identification" and "password"; the controller action is "authenticate" }}
-//-   <form {{action 'authenticate' on='submit'}}>
-//-     <div class="form-group">
-//-       {{input id='identification' placeholder='Enter Login' class='form-control' value=identification}}
-//-     </div>
-//-     <div class="form-group">
-//-       {{input id='password' placeholder='Enter Password' class='form-control' type='password' value=password}}
-//-     </div>
-//-     <button type="submit" class="btn btn-default">Login</button>
-//-   </form>
-//-   {{#link-to 'signup'}} Sign Up {{/link-to}}
+script(type='text/html' id='login').
+  <h1>Login</h1>
+  <form>
+    <div class="form-group">
+      <input id='email' placeholder='Enter Login' class='form-control' />
+    </div>
+    <div class="form-group">
+      <input id='password' placeholder='Enter Password' class='form-control' type='password' />
+    </div>
+    <button id="login-btn" type="submit" class="btn btn-default">Login</button>
+  </form>
+  <a href="#/signup">Sign Up</a>
+
+script(type='text/html' id='signup').
+  <h1>Sign Up</h1>
+  <form>
+    <div class="form-group">
+      <input id='email' placeholder='Enter Login' class='form-control' />
+    </div>
+    <div class="form-group">
+      <input id='password' placeholder='Enter Password' class='form-control' type='password' />
+    </div>
+    <button id='signup-btn' type="submit" class="btn btn-default">Sign Up</button>
+  </form>
