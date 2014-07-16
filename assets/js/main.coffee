@@ -17,14 +17,34 @@ Ember.Application.initializer
 DS.RESTAdapter.reopen
   host: API_SERVER
 
+require = (resource, fn) ->
+  asArray = resource.toArray()
+  if asArray.length
+    fn(asArray)
+  else
+    0
+
 # Models
 App.Habit = DS.Model.extend
   title: DS.attr 'string'
+  unit: DS.attr 'string'
   checkins: DS.hasMany 'checkin'
+  newCheckinValue: 1
   value: Ember.computed 'checkins', ->
     @get('checkins')
       .reduce ((memo, c) ->
-        memo += c.get 'value' ), 0
+        memo += +c.get 'value' ), 0
+  maxCheckin: Ember.computed 'checkins', ->
+    require @get('checkins'), (checkins) ->
+      _.max(checkins, (checkin) ->
+        checkin.get('value')).get('value')
+  minCheckin: Ember.computed 'checkins', ->
+    require @get('checkins'), (checkins) ->
+      _.min(checkins, (checkin) ->
+        checkin.get('value')).get('value')
+  lastCheckin: Ember.computed 'checkins', ->
+    require @get('checkins'), (checkins) ->
+      _.last(checkins).get('value')
 
 App.Checkin = DS.Model.extend
   habit: DS.belongsTo 'habit'
@@ -42,7 +62,7 @@ App.ApplicationRoute = Ember.Route.extend Ember.SimpleAuth.ApplicationRouteMixin
 App.Router.map ->
   @route 'login'
   @route 'signup'
-  @resource 'habits', ->
+  @resource 'habits'
   @resource 'habits.new', path: '/habits/new'
   @resource 'habit', path: '/habits/:habit_id'
 
@@ -62,7 +82,7 @@ App.SignupRoute = Ember.Route.extend
             identification: @currentModel.identification
             password: @currentModel.password
 
-checkin = (value) ->
+_checkin = (value) ->
   (habit) ->
     checkin = @store.createRecord 'checkin',
       value: value
@@ -76,8 +96,8 @@ App.HabitsRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
       @transitionTo 'habits.new'
   model: -> @store.find 'habit'
   actions:
-    plusOne: checkin(1)
-    minusOne: checkin(-1)
+    plusOne: _checkin(1)
+    minusOne: _checkin(-1)
 
 App.HabitsNewRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
   model: -> @store.createRecord 'habit'
@@ -93,6 +113,9 @@ App.HabitRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
     removeHabit: ->
       @modelFor('habit').destroyRecord().then =>
         @transitionTo 'habits'
+    checkin: (habit, direction) ->
+      value = if direction is 'plus' then habit.newCheckinValue else -habit.newCheckinValue
+      _checkin.call(this, value).call(this, habit)
 
 App.IndexRoute = Ember.Route.extend
   redirect: ->

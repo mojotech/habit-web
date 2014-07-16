@@ -25,21 +25,22 @@ button, .btn
   position absolute
   top 0
   right 0
-  button
+
+button
+  &.plus, &.minus
     font-size 40px
     font-weight 200
     position relative
     top -4px
     width 50px
     padding 0
-    &.plus, &.minus
-      opacity 0.5
-      &:active
-        opacity 1
-    &.plus
-      color green
-    &.minus
-      color red
+    opacity 0.5
+    &:active
+      opacity 1
+.plus
+  color green
+.minus
+  color red
 
 
 .delete

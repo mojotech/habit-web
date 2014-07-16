@@ -33,7 +33,8 @@ script(type='text/x-handlebars', id="habits/new").
     <h4> New Habit </h4>
     <a {{action 'invalidateSession'}} class="logout"> Logout </a>
   </div>
-  {{view Ember.TextField valueBinding="title" cols="30"}}
+  {{view Ember.TextField placeholder="Habit Title" valueBinding="title" cols="30"}}
+  {{view Ember.TextField placeholder="Unit" valueBinding="unit" cols="30"}}
   <button {{action 'save'}}> Save </button>
 
 script(type='text/x-handlebars' id='habit').
@@ -41,7 +42,15 @@ script(type='text/x-handlebars' id='habit').
     <h4> {{title}} </h4>
     <a {{action 'invalidateSession'}} class="logout"> Logout </a>
   </div>
-
+  <h2> {{value}} {{unit}} </h2>
+  {{view Ember.TextField valueBinding="newCheckinValue" cols="30"}}
+  <div class='inline-button-container'>
+    <button {{action 'checkin' this 'plus'}} class='plus'> + </button>
+    <button {{action 'checkin' this 'minus'}} class='minus'> - </button>
+  </div>
+  Max Checkin: {{maxCheckin}}
+  Min Checkin: {{minCheckin}}
+  Last Checkin: {{lastCheckin}}
   <button {{action 'removeHabit'}} class='delete'> Delete {{title}} </button>
 
 script(type='text/x-handlebars' id='login').
