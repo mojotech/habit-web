@@ -17,13 +17,15 @@ script(type='text/x-handlebars' id='habits').
   </div>
   <ul>
     {{#each}}
-    <li>
-      <div class='title'> {{#link-to 'habit' this}}<span class='value'>{{value}}</span>{{title}}{{/link-to}} </div>
-      <div class='button-container'>
-        <button {{action 'plusOne' this}} class='plus'> + </button>
-        <button {{action 'minusOne' this}} class='minus'> - </button>
-      </div>
-    </li>
+      {{#if title}}
+        <li>
+          <div class='title'> {{#link-to 'habit' this}}<span class='value'>{{value}}</span>{{title}}{{/link-to}} </div>
+          <div class='button-container'>
+            <button {{action 'plusOne' this}} class='plus'> + </button>
+            <button {{action 'minusOne' this}} class='minus'> - </button>
+          </div>
+        </li>
+      {{/if}}
     {{/each}}
   </ul>
   {{#link-to 'habits.new'}} New Habit {{/link-to}}
