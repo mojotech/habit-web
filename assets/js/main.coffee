@@ -65,6 +65,7 @@ App.Router.map ->
   @resource 'habits'
   @resource 'habits.new', path: '/habits/new'
   @resource 'habit', path: '/habits/:habit_id'
+  @resource 'habits.edit', path: '/habits/:habit_id/edit'
 
 App.LoginController = Ember.Controller.extend Ember.SimpleAuth.LoginControllerMixin,
   authenticatorFactory: 'ember-simple-auth-authenticator:devise'
@@ -106,6 +107,13 @@ App.HabitsNewRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin
       @modelFor('habits.new').save().then =>
         @transitionTo 'habits'
 
+App.HabitsEditRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
+  model: (params) -> @store.find('habit', params.habit_id)
+  actions:
+    save: ->
+      @currentModel.save().then =>
+        @transitionTo 'habits'
+
 App.HabitRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
   model: (params) ->
     @store.find 'habit', params.habit_id
@@ -113,6 +121,8 @@ App.HabitRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
     removeHabit: ->
       @modelFor('habit').destroyRecord().then =>
         @transitionTo 'habits'
+    editHabit: ->
+      @transitionTo('habits.edit', @currentModel)
     checkin: (habit, direction) ->
       value = if direction is 'plus' then habit.newCheckinValue else -habit.newCheckinValue
       _checkin.call(this, value).call(this, habit)

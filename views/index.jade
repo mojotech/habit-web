@@ -28,14 +28,24 @@ script(type='text/x-handlebars' id='habits').
   </ul>
   {{#link-to 'habits.new'}} New Habit {{/link-to}}
 
+script(type='text/x-handlebars', id="habits/_form").
+  {{view Ember.TextField placeholder="Habit Title" valueBinding="title" cols="30"}}
+  {{view Ember.TextField placeholder="Unit" valueBinding="unit" cols="30"}}
+  <button {{action 'save'}}> Save </button>
+
 script(type='text/x-handlebars', id="habits/new").
   <div class="nav-bar">
     <h4> New Habit </h4>
     <a {{action 'invalidateSession'}} class="logout"> Logout </a>
   </div>
-  {{view Ember.TextField placeholder="Habit Title" valueBinding="title" cols="30"}}
-  {{view Ember.TextField placeholder="Unit" valueBinding="unit" cols="30"}}
-  <button {{action 'save'}}> Save </button>
+  {{partial "habits/form"}}
+
+script(type='text/x-handlebars', id="habits/edit").
+  <div class="nav-bar">
+    <h4> Edit Habit </h4>
+    <a {{action 'invalidateSession'}} class="logout"> Logout </a>
+  </div>
+  {{partial "habits/form"}}
 
 script(type='text/x-handlebars' id='habit').
   <div class="nav-bar">
@@ -51,6 +61,8 @@ script(type='text/x-handlebars' id='habit').
   Max Checkin: {{maxCheckin}}
   Min Checkin: {{minCheckin}}
   Last Checkin: {{lastCheckin}}
+  <br />
+  <button {{action 'editHabit'}} class='edit'> Edit {{title}} </button>
   <button {{action 'removeHabit'}} class='delete'> Delete {{title}} </button>
 
 script(type='text/x-handlebars' id='login').
