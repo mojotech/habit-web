@@ -31,10 +31,11 @@ App.Habit = DS.Model.extend
   private: DS.attr 'boolean'
   checkins: DS.hasMany 'checkin'
   newCheckinValue: 1
-  value: Ember.computed 'checkins', ->
-    @get('checkins')
-      .reduce ((memo, c) ->
-        memo += +c.get 'value' ), 0
+  # value: Ember.computed 'checkins', ->
+  #   value = 0
+  #   # @get('checkins').forEach (checkin) ->
+  #   #   value += checkin.get('value') if @get('session.user_id') == checkin.user_id
+  #   value
   maxCheckin: Ember.computed 'checkins', ->
     require @get('checkins'), (checkins) ->
       _.max(checkins, (checkin) ->
@@ -52,6 +53,7 @@ App.Checkin = DS.Model.extend
   value: DS.attr 'number'
   email: DS.attr 'string'
   created_at: DS.attr 'date'
+  user_id: DS.attr 'number'
 
 App.User = DS.Model.extend
   habits: DS.hasMany 'habits'
@@ -73,6 +75,19 @@ App.Router.map ->
 App.LoginController = Ember.Controller.extend Ember.SimpleAuth.LoginControllerMixin,
   authenticatorFactory: 'ember-simple-auth-authenticator:devise'
 
+App.HabitController = Ember.ObjectController.extend
+  myCheckinValue:(->
+    @get('model.checkins').reduce ((prev, checkin) =>
+      if +@get('session.user_id') is +checkin.get('user_id')
+        prev += checkin.get('value')
+      else
+        prev
+    ), 0
+  ).property('model.checkins')
+
+App.HabitsController = Ember.ArrayController.extend
+  itemController: 'habit'
+
 App.checkinsController = Ember.ArrayController.create
   sortProperties: ['created_at']
   sortAscending: false
@@ -91,10 +106,11 @@ App.SignupRoute = Ember.Route.extend
             password: @currentModel.password
 
 _checkin = (value) ->
-  (habit) ->
+  (habit, userId) ->
     checkin = @store.createRecord 'checkin',
       value: value
       habit: habit
+      user_id: userId
     habit.notifyPropertyChange 'checkins'
     checkin.save()
 
@@ -102,7 +118,8 @@ App.HabitsRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
   afterModel: (habits) ->
     if habits.content.length is 0
       @transitionTo 'habits.new'
-  model: -> @store.find 'habit'
+  model: -> 
+    @store.find 'habit'
   actions:
     plusOne: _checkin(1)
     minusOne: _checkin(-1)
@@ -134,7 +151,7 @@ App.HabitRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
       @transitionTo('habits.edit', @currentModel)
     checkin: (habit, direction) ->
       value = if direction is 'plus' then habit.newCheckinValue else -habit.newCheckinValue
-      _checkin.call(this, value).call(this, habit)
+      _checkin.call(this, value).call(this, habit, @get('session.user_id'))
 
 App.IndexRoute = Ember.Route.extend
   redirect: ->
