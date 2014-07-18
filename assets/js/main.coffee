@@ -49,6 +49,8 @@ App.Habit = DS.Model.extend
 App.Checkin = DS.Model.extend
   habit: DS.belongsTo 'habit'
   value: DS.attr 'number'
+  email: DS.attr 'string'
+  created_at: DS.attr 'date'
 
 App.User = DS.Model.extend
   habits: DS.hasMany 'habits'
@@ -69,6 +71,10 @@ App.Router.map ->
 
 App.LoginController = Ember.Controller.extend Ember.SimpleAuth.LoginControllerMixin,
   authenticatorFactory: 'ember-simple-auth-authenticator:devise'
+
+App.checkinsController = Ember.ArrayController.create
+  sortProperties: ['created_at']
+  sortAscending: false
 
 App.SignupRoute = Ember.Route.extend
   model: -> {}
@@ -117,6 +123,8 @@ App.HabitsEditRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixi
 App.HabitRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
   model: (params) ->
     @store.find 'habit', params.habit_id
+  afterModel: (model) ->
+    App.checkinsController.set('content', model.get('checkins'))
   actions:
     removeHabit: ->
       @modelFor('habit').destroyRecord().then =>

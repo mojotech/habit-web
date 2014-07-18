@@ -66,6 +66,11 @@ script(type='text/x-handlebars' id='habit').
   <br />
   <button {{action 'editHabit'}} class='edit'> Edit {{title}} </button>
   <button {{action 'removeHabit'}} class='delete'> Delete {{title}} </button>
+  <br />
+  <h3>Public Checkins</h3>
+  {{#each App.checkinsController}}
+    <p>{{email}} ({{value}})</p>
+  {{/each}}
 
 script(type='text/x-handlebars' id='login').
   <h1>Login</h1>
