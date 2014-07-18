@@ -19,10 +19,10 @@ script(type='text/x-handlebars' id='habits').
     {{#each}}
       {{#if title}}
         <li>
-          <div class='title'> {{#link-to 'habit' this}}<span class='value'>{{value}}</span>{{title}}{{/link-to}} </div>
+          <div class='title'> {{#link-to 'habit' this}}<span class='value'>{{myCheckinValue}}</span>{{title}}{{/link-to}} </div>
           <div class='button-container'>
-            <button {{action 'plusOne' this}} class='plus'> + </button>
-            <button {{action 'minusOne' this}} class='minus'> - </button>
+            <button {{action 'plusOne' this session.user_id}} class='plus'> + </button>
+            <button {{action 'minusOne' this session.user_id}} class='minus'> - </button>
           </div>
         </li>
       {{/if}}
