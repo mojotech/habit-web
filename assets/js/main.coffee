@@ -28,6 +28,7 @@ require = (resource, fn) ->
 App.Habit = DS.Model.extend
   title: DS.attr 'string'
   unit: DS.attr 'string'
+  private: DS.attr 'boolean'
   checkins: DS.hasMany 'checkin'
   newCheckinValue: 1
   value: Ember.computed 'checkins', ->

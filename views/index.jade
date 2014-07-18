@@ -33,6 +33,8 @@ script(type='text/x-handlebars' id='habits').
 script(type='text/x-handlebars', id="habits/_form").
   {{view Ember.TextField placeholder="Habit Title" valueBinding="title" cols="30"}}
   {{view Ember.TextField placeholder="Unit" valueBinding="unit" cols="30"}}
+  <label> Private </label>
+  {{input type="checkbox" checked=private}}
   <button {{action 'save'}}> Save </button>
 
 script(type='text/x-handlebars', id="habits/new").
@@ -67,9 +69,17 @@ script(type='text/x-handlebars' id='habit').
   <button {{action 'editHabit'}} class='edit'> Edit {{title}} </button>
   <button {{action 'removeHabit'}} class='delete'> Delete {{title}} </button>
   <br />
-  <h3>Public Checkins</h3>
-  {{#each App.checkinsController}}
-    <p>{{email}} ({{value}})</p>
+  {{#if private}}
+    <h3>Private Checkins</h3>
+  {{else}}
+    <h3>Public Checkins</h3>
+  {{/if}}
+  {{#each checkin in App.checkinsController}}
+    {{#if private}}
+      <p>({{checkin.value}})</p>
+    {{else}}
+      <p>{{checkin.email}} ({{checkin.value}})</p>
+    {{/if}}
   {{/each}}
 
 script(type='text/x-handlebars' id='login').
