@@ -30,6 +30,7 @@ App.Habit = DS.Model.extend
   unit: DS.attr 'string'
   private: DS.attr 'boolean'
   checkins: DS.hasMany 'checkin'
+  users: DS.hasMany 'user'
   newCheckinValue: 1
   value: Ember.computed 'checkins', ->
     @get('checkins')

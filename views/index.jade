@@ -65,6 +65,7 @@ script(type='text/x-handlebars' id='habit').
   Max Checkin: {{maxCheckin}}
   Min Checkin: {{minCheckin}}
   Last Checkin: {{lastCheckin}}
+  Users: {{users.length}}
   <br />
   <button {{action 'editHabit'}} class='edit'> Edit {{title}} </button>
   <button {{action 'removeHabit'}} class='delete'> Delete {{title}} </button>
@@ -80,8 +81,11 @@ script(type='text/x-handlebars' id='habit').
     {{else}}
       <p>{{checkin.email}} ({{checkin.value}})</p>
     {{/if}}
+  <ul>
+  {{#each user in users}}
+    <li>{{user.email}}</li>
   {{/each}}
-
+  </ul>
 script(type='text/x-handlebars' id='login').
   <h1>Login</h1>
   {{! login form; the fields must be named "identification" and "password"; the controller action is "authenticate" }}
