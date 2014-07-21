@@ -30,11 +30,9 @@ App.Habit = DS.Model.extend
   unit: DS.attr 'string'
   private: DS.attr 'boolean'
   checkins: DS.hasMany 'checkin'
+  users: DS.hasMany 'user'
   newCheckinValue: 1
-  value: Ember.computed 'checkins', ->
-    @get('checkins')
-      .reduce ((memo, c) ->
-        memo += +c.get 'value' ), 0
+  value: DS.attr 'number'
   maxCheckin: Ember.computed 'checkins', ->
     require @get('checkins'), (checkins) ->
       _.max(checkins, (checkin) ->
@@ -95,8 +93,8 @@ _checkin = (value) ->
     checkin = @store.createRecord 'checkin',
       value: value
       habit: habit
-    habit.notifyPropertyChange 'checkins'
-    checkin.save()
+    checkin.save().then =>
+      @store.reloadRecord habit
 
 App.HabitsRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
   afterModel: (habits) ->
@@ -112,6 +110,7 @@ App.HabitsNewRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin
   actions:
     save: ->
       @modelFor('habits.new').save().then =>
+        @store.unloadAll 'habit'
         @transitionTo 'habits'
 
 App.HabitsEditRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
@@ -119,6 +118,7 @@ App.HabitsEditRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixi
   actions:
     save: ->
       @currentModel.save().then =>
+        @store.unloadAll 'habit'
         @transitionTo 'habits'
 
 App.HabitRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
