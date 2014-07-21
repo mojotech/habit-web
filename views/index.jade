@@ -70,17 +70,20 @@ script(type='text/x-handlebars' id='habit').
   <button {{action 'editHabit'}} class='edit'> Edit {{title}} </button>
   <button {{action 'removeHabit'}} class='delete'> Delete {{title}} </button>
   <br />
-  {{#if private}}
-    <h3>Private Checkins</h3>
-  {{else}}
-    <h3>Public Checkins</h3>
-  {{/if}}
-  {{#each checkin in App.checkinsController}}
+  {{#if checkins.length}}
     {{#if private}}
-      <p>({{checkin.value}})</p>
+      <h3>Private Checkins</h3>
     {{else}}
-      <p>{{checkin.email}} ({{checkin.value}})</p>
+      <h3>Public Checkins</h3>
     {{/if}}
+    {{#each checkin in App.checkinsController}}
+      {{#if private}}
+        <p>({{checkin.value}})</p>
+      {{else}}
+        <p>{{checkin.email}} ({{checkin.value}})</p>
+      {{/if}}
+    {{/each}}
+  {{/if}}
   <ul>
   {{#each user in users}}
     <li>{{user.email}}</li>
