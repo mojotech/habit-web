@@ -110,6 +110,7 @@ App.HabitsNewRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin
   actions:
     save: ->
       @modelFor('habits.new').save().then =>
+        @store.unloadAll 'habit'
         @transitionTo 'habits'
 
 App.HabitsEditRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
@@ -117,6 +118,7 @@ App.HabitsEditRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixi
   actions:
     save: ->
       @currentModel.save().then =>
+        @store.unloadAll 'habit'
         @transitionTo 'habits'
 
 App.HabitRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
