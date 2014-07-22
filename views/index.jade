@@ -30,8 +30,12 @@ script(type='text/x-handlebars' id='habits').
   </ul>
   {{#link-to 'habits.new'}} New Habit {{/link-to}}
 
+//- {{type-ahead data=App.habitTitles name="title" selection=selectedHabit placeholder="Habit Title" cols=30 valueBinding="title"}}
 script(type='text/x-handlebars', id="habits/_form").
-  {{view Ember.TextField placeholder="Habit Title" valueBinding="title" cols="30"}}
+  {{twitter-typeahead id="title"
+                      placeholder="Habit Title"
+                      remote="http://localhost:3000/habits?title=%QUERY"
+                      customTemplate="<i>{{value}}</i>"}}
   {{view Ember.TextField placeholder="Unit" valueBinding="unit" cols="30"}}
   <label> Private </label>
   {{input type="checkbox" checked=private}}

@@ -121,10 +121,14 @@ App.HabitsRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
     minusOne: _checkin(-1)
 
 App.HabitsNewRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
-  model: -> @store.createRecord 'habit'
+  activate: ->
+    App.habitTitles = @store.find 'habit', title: 'd'
+  model: ->
+    @store.createRecord 'habit'
   actions:
     save: ->
-      @modelFor('habits.new').save().then =>
+      @currentModel.set('title', $('#title').val())
+      @currentModel.save().then =>
         @store.unloadAll 'habit'
         @transitionTo 'habits'
 
@@ -154,3 +158,28 @@ App.HabitRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
 App.IndexRoute = Ember.Route.extend
   redirect: ->
     @transitionTo 'habits'
+
+App.TwitterTypeaheadComponent = Ember.Component.extend
+  tagName: "input"
+  attributeBindings: ["placeholder", "id"]
+  didInsertElement: ->
+    @$().typeahead(
+      name: @get("name") or "typeahead"
+      limit: @get("limit") or 5
+      minLength: @get("minLength") or 5
+      remote:
+        url: @get("remote") or null
+        filter:  (data) ->
+          _(data.habits).sortBy(
+            (habit) -> habit.user_ids.length
+          ).map(
+            (habit) -> value: habit.title
+          ).value().reverse()
+      template: @get("customTemplate") or null
+      engine:
+        compile: (template) ->
+          compiled = Handlebars.compile(template)
+          render: (context) ->
+            compiled context
+    ).on "typeahead:selected typeahead:autocompleted", (e, datum) =>
+      @sendAction "action", datum
