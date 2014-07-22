@@ -85,6 +85,11 @@ App.HabitController = Ember.ObjectController.extend
 App.HabitsController = Ember.ArrayController.extend
   itemController: 'habit'
 
+App.HabitsNewController = Ember.ObjectController.extend
+  actions:
+    habitSelected: (habit) ->
+      @content.set('unit', habit.unit)
+
 App.checkinsController = Ember.ArrayController.create
   sortProperties: ['created_at']
   sortAscending: false
@@ -173,7 +178,9 @@ App.TwitterTypeaheadComponent = Ember.Component.extend
           _(data.habits).sortBy(
             (habit) -> habit.user_ids.length
           ).map(
-            (habit) -> value: habit.title
+            (habit) ->
+              value: habit.title
+              unit: habit.unit
           ).value().reverse()
       template: @get("customTemplate") or null
       engine:
