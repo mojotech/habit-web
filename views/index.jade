@@ -31,15 +31,28 @@ script(type='text/x-handlebars' id='habits').
   {{#link-to 'habits.new'}} New Habit {{/link-to}}
 
 script(type='text/x-handlebars', id="habits/_form").
-  {{twitter-typeahead id="title"
-                      placeholder="Habit Title"
-                      remote="http://localhost:3000/habits?title=%QUERY"
-                      customTemplate="<i>{{value}}</i>"
-                      action="habitSelected"}}
-  {{view Ember.TextField placeholder="Unit" valueBinding="unit" cols="30"}}
+  {{#if isEditable}}
+    {{twitter-typeahead id="title"
+                        placeholder="Habit Title"
+                        remote="http://localhost:3000/habits?title=%QUERY"
+                        customTemplate="<i>{{value}} ({{user_count}})</i>"
+                        action="habitSelected"
+                        valueBinding="title"}}
+    {{view Ember.TextField placeholder="Unit" valueBinding="unit" cols="30"}}
+  {{else}}
+    {{twitter-typeahead id="title"
+                        placeholder="Habit Title"
+                        remote="http://localhost:3000/habits?title=%QUERY"
+                        customTemplate="<i>{{value}} ({{user_count}})</i>"
+                        action="habitSelected"
+                        valueBinding="title"
+                        disabled="true"}}
+    {{view Ember.TextField placeholder="Unit" valueBinding="unit" cols="30" disabled="true"}}
+  {{/if}}
   <label> Private </label>
   {{input type="checkbox" checked=private}}
   <button {{action 'save'}}> Save </button>
+  <button {{action 'cancel'}}> Cancel </button>
 
 script(type='text/x-handlebars', id="habits/new").
   <div class="nav-bar">
@@ -88,11 +101,6 @@ script(type='text/x-handlebars' id='habit').
       {{/if}}
     {{/each}}
   {{/if}}
-  <ul>
-  {{#each user in users}}
-    <li>{{user.email}}</li>
-  {{/each}}
-  </ul>
 script(type='text/x-handlebars' id='login').
   <h1>Login</h1>
   {{! login form; the fields must be named "identification" and "password"; the controller action is "authenticate" }}

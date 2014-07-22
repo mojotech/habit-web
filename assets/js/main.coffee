@@ -44,6 +44,9 @@ App.Habit = DS.Model.extend
   lastCheckin: Ember.computed 'checkins', ->
     require @get('checkins'), (checkins) ->
       _.last(checkins).get('value')
+  isEditable:(->
+    @get('private') == true or !@get('user_count') > 0
+  ).property('private', 'user_count')
 
 App.Checkin = DS.Model.extend
   habit: DS.belongsTo 'habit'
@@ -88,7 +91,16 @@ App.HabitsController = Ember.ArrayController.extend
 App.HabitsNewController = Ember.ObjectController.extend
   actions:
     habitSelected: (habit) ->
+      @content.set('title', habit.value)
       @content.set('unit', habit.unit)
+      @content.set('user_count', habit.user_count)
+
+App.HabitsEditController = Ember.ObjectController.extend
+  actions:
+    habitSelected: (habit) ->
+      @content.set('title', habit.value)
+      @content.set('unit', habit.unit)
+      @content.set('user_count', habit.user_count)
 
 App.checkinsController = Ember.ArrayController.create
   sortProperties: ['created_at']
@@ -115,6 +127,7 @@ _checkin = (value) ->
       user_id: userId
     checkin.save().then =>
       @store.reloadRecord habit
+
 App.HabitsRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
   afterModel: (habits) ->
     if habits.content.length is 0
@@ -126,16 +139,18 @@ App.HabitsRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
     minusOne: _checkin(-1)
 
 App.HabitsNewRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
-  activate: ->
-    App.habitTitles = @store.find 'habit', title: 'd'
   model: ->
     @store.createRecord 'habit'
   actions:
     save: ->
-      @currentModel.set('title', $('#title').val())
       @currentModel.save().then =>
         @store.unloadAll 'habit'
         @transitionTo 'habits'
+    cancel: ->
+      @currentModel.set('user_count', 0)
+      @currentModel.set('title', '')
+      @currentModel.set('unit', '')
+      @currentModel.set('private', false)
 
 App.HabitsEditRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
   model: (params) -> @store.find('habit', params.habit_id)
@@ -144,6 +159,9 @@ App.HabitsEditRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixi
       @currentModel.save().then =>
         @store.unloadAll 'habit'
         @transitionTo 'habits'
+    cancel: ->
+      @currentModel.set('user_count', 0)
+      @currentModel.rollback()
 
 App.HabitRoute = Ember.Route.extend Ember.SimpleAuth.AuthenticatedRouteMixin,
   model: (params) ->
@@ -164,9 +182,9 @@ App.IndexRoute = Ember.Route.extend
   redirect: ->
     @transitionTo 'habits'
 
-App.TwitterTypeaheadComponent = Ember.Component.extend
+App.TwitterTypeaheadComponent = Ember.TextField.extend
   tagName: "input"
-  attributeBindings: ["placeholder", "id"]
+  attributeBindings: ["placeholder", "id", "disabled"]
   didInsertElement: ->
     @$().typeahead(
       name: @get("name") or "typeahead"
@@ -175,12 +193,12 @@ App.TwitterTypeaheadComponent = Ember.Component.extend
       remote:
         url: @get("remote") or null
         filter:  (data) ->
-          _(data.habits).sortBy(
-            (habit) -> habit.user_ids.length
-          ).map(
-            (habit) ->
-              value: habit.title
-              unit: habit.unit
+          _(data.habits).sortBy((habit) ->
+            habit.user_ids.length
+          ).map((habit) ->
+            value: habit.title
+            unit: habit.unit
+            user_count: habit.user_count
           ).value().reverse()
       template: @get("customTemplate") or null
       engine:
