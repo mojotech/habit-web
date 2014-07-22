@@ -52,7 +52,9 @@ script(type='text/x-handlebars', id="habits/_form").
   <label> Private </label>
   {{input type="checkbox" checked=private}}
   <button {{action 'save'}} class='save'> Save </button>
-  <button {{action 'cancel'}} class='cancel'> Cancel </button>
+  {{#unless isEditable}}
+    <button {{action 'cancel'}} class='cancel'> Cancel </button>
+  {{/unless}}
 
 script(type='text/x-handlebars', id="habits/new").
   <div class="nav-bar">
