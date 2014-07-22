@@ -19,10 +19,10 @@ script(type='text/x-handlebars' id='habits').
     {{#each}}
       {{#if title}}
         <li>
-          <div class='title'> {{#link-to 'habit' this}}<span class='value'>{{value}}</span>{{title}}{{/link-to}} </div>
+          <div class='title'> {{#link-to 'habit' this}}<span class='value'>{{myCheckinValue}}</span>{{title}}{{/link-to}} </div>
           <div class='button-container'>
-            <button {{action 'plusOne' this}} class='plus'> + </button>
-            <button {{action 'minusOne' this}} class='minus'> - </button>
+            <button {{action 'plusOne' this session.user_id}} class='plus'> + </button>
+            <button {{action 'minusOne' this session.user_id}} class='minus'> - </button>
           </div>
         </li>
       {{/if}}
@@ -31,11 +31,30 @@ script(type='text/x-handlebars' id='habits').
   {{#link-to 'habits.new'}} New Habit {{/link-to}}
 
 script(type='text/x-handlebars', id="habits/_form").
-  {{view Ember.TextField placeholder="Habit Title" valueBinding="title" cols="30"}}
-  {{view Ember.TextField placeholder="Unit" valueBinding="unit" cols="30"}}
+  {{#if isEditable}}
+    {{twitter-typeahead id="title"
+                        placeholder="Habit Title"
+                        remote="http://localhost:3000/habits?title=%QUERY"
+                        customTemplate="<i>{{value}} ({{user_count}})</i>"
+                        action="habitSelected"
+                        valueBinding="title"}}
+    {{view Ember.TextField placeholder="Unit" valueBinding="unit" cols="30"}}
+  {{else}}
+    {{twitter-typeahead id="title"
+                        placeholder="Habit Title"
+                        remote="http://localhost:3000/habits?title=%QUERY"
+                        customTemplate="<i>{{value}} ({{user_count}})</i>"
+                        action="habitSelected"
+                        valueBinding="title"
+                        disabled="true"}}
+    {{view Ember.TextField placeholder="Unit" valueBinding="unit" cols="30" disabled="true"}}
+  {{/if}}
   <label> Private </label>
   {{input type="checkbox" checked=private}}
-  <button {{action 'save'}}> Save </button>
+  <button {{action 'save'}} class='save'> Save </button>
+  {{#unless isEditable}}
+    <button {{action 'cancel'}} class='cancel'> Cancel </button>
+  {{/unless}}
 
 script(type='text/x-handlebars', id="habits/new").
   <div class="nav-bar">
@@ -84,11 +103,6 @@ script(type='text/x-handlebars' id='habit').
       {{/if}}
     {{/each}}
   {{/if}}
-  <ul>
-  {{#each user in users}}
-    <li>{{user.email}}</li>
-  {{/each}}
-  </ul>
 script(type='text/x-handlebars' id='login').
   <h1>Login</h1>
   {{! login form; the fields must be named "identification" and "password"; the controller action is "authenticate" }}
